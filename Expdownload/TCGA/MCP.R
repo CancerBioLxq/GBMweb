@@ -1,21 +1,14 @@
-rm(list = ls())
+rm(list=ls())
+library(MCPcounter)
 
-load(file = "shared_genes.Rdata")
+load("exprSetNorm.Rdata")
+exprSet <- as.data.frame(t(exprSetNorm))
+exprSet[1:6,1:6]
 
-exprSet <- read.csv(file = "exprSet.csv", row.names = 1)
-exprSet <- exprSet[which(rownames(exprSet) %in% shared_genes),]
-exprSet <- na.omit(exprSet)
+results <- MCPcounter.estimate(expression = exprSet, featuresType = "HUGO_symbols")
 
-min(exprSet)
-max(exprSet)
-
-FPKM2TPM <- function(fpkm){
-  exp(log(fpkm) - log(sum(fpkm)) + log(1e6))
-}
-exprSet_tpm <- apply(exprSet, 2, FPKM2TPM)
-exprSet <- as.data.frame(t(exprSet_tpm))
-exprSet[1:5,1:5]
-dim(exprSet)
+results <- as.data.frame(t(results))
+results[1:6,1:6]
 
 quantileNormalizationPositive <- function(x) {
   Q1 <- quantile(x, 0.25)
@@ -24,9 +17,9 @@ quantileNormalizationPositive <- function(x) {
   return(x_normalized)
 }
 
-exprSet_normalized <- apply(exprSet, 2, quantileNormalizationPositive)
-exprSet <- as.data.frame(exprSet_normalized)
-exprSet[1:5,1:5]
+results_normalized <- apply(results, 2, quantileNormalizationPositive)
+results_normalized <- as.data.frame(results_normalized)
+colnames(results_normalized) <- gsub(" ", "", colnames(results_normalized))
+results_normalized[1:5,1:5]
 
-exprSetNorm <- exprSet
-save(exprSetNorm, file = "exprSetNorm.Rdata")
+write.csv(results_normalized, file = "MCPresults.csv")
